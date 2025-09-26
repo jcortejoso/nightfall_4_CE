@@ -13,6 +13,7 @@ use alloy::rpc::types::Filter;
 use alloy::{
     consensus::Transaction,
     dyn_abi::abi::encode,
+    network::TxSigner,
     providers::Provider,
     sol_types::{SolInterface, SolValue},
 };
@@ -80,25 +81,20 @@ impl NightfallContract for Nightfall::NightfallCalls {
             .value(Uint256::from(total_fee).0)
             .from(signer.address());
 
-        // Send transaction directly through Alloy
+        // TODO: Fix signing issue - currently uses eth_sendTransaction instead of eth_sendRawTransaction
+        // This causes "unknown account" errors because the node doesn't have the private key
+        // Solution: Implement proper local signing with wallet-configured provider
         let receipt = call
             .send()
             .await
             .map_err(|e| {
-                if e.as_revert_data().is_some() {
-                    format!(
-                        "Revert when calling escrow: {:?}",
-                        e.as_decoded_error::<ERC20Mock::ERC20InsufficientBalance>()
-                    )
-                } else {
-                    format!("Contract error: {e}")
-                }
+                format!("Contract error: {e}")
             })
             .expect("Error sending transaction")
             .get_receipt()
             .await
             .map_err(|e| {
-                NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
+                NightfallContractError::EscrowError(format!("Transaction unsuccessful: {e}"))
             })?;
 
         info!("Gas used in escrow funds: {:?}", receipt.gas_used);

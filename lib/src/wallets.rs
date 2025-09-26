@@ -4,6 +4,7 @@ use crate::{
 use alloy::primitives::Address;
 use alloy::providers::{Provider, ProviderBuilder};
 use alloy::signers::local::PrivateKeySigner;
+use alloy::signers::Signer;
 use alloy::transports::ws::WsConnect;
 use async_trait::async_trait;
 use azure_security_keyvault::SecretClient;
@@ -99,7 +100,8 @@ impl BlockchainClientConnection for LocalWsClient {
             "local" => settings
                 .signing_key
                 .parse::<PrivateKeySigner>()
-                .map_err(BlockchainClientConnectionError::WalletError)?,
+                .map_err(BlockchainClientConnectionError::WalletError)?
+                .with_chain_id(Some(settings.network.chain_id)),
             "azure" => {
                 let azure_wallet =
                     AzureWallet::new(&settings.azure_vault_url, &settings.azure_key_name).await?;
@@ -107,6 +109,7 @@ impl BlockchainClientConnection for LocalWsClient {
                 signing_key
                     .parse::<PrivateKeySigner>()
                     .map_err(BlockchainClientConnectionError::WalletError)?
+                    .with_chain_id(Some(settings.network.chain_id))
             }
             "YubiWallet" => todo!(),
             "AwsSigner" => todo!(),
