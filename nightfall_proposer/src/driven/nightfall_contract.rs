@@ -30,9 +30,12 @@ impl NightfallContract for Nightfall::NightfallCalls {
         // Convert the block transactions to the Nightfall format
         let blk: Nightfall::Block = block.into();
 
-        let nonce = client.get_transaction_count(signer.address()).await.map_err(|e| {
-            NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
-        })?;
+        let nonce = client
+            .get_transaction_count(signer.address())
+            .await
+            .map_err(|e| {
+                NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
+            })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
             NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
         })?;
@@ -46,18 +49,20 @@ impl NightfallContract for Nightfall::NightfallCalls {
             .max_fee_per_gas(max_fee_per_gas)
             .max_priority_fee_per_gas(max_priority_fee_per_gas)
             .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-            .build_raw_transaction(signer).await
+            .build_raw_transaction(signer)
+            .await
             .map_err(|e| {
                 NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
             })?;
 
-            let receipt = client.send_raw_transaction(&call)
+        let receipt = client
+            .send_raw_transaction(&call)
             .await
             .map_err(|_| NightfallContractError::TransactionError)?
             .get_receipt()
             .await
             .map_err(|_| NightfallContractError::TransactionError)?;
-    
+
         info!(
             "Received receipt for submitted block with hash: {}, gas used was: {}",
             receipt.transaction_hash, receipt.gas_used

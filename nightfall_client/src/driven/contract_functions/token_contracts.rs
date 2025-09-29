@@ -2,15 +2,62 @@
 
 use super::contract_type_conversions::{Addr, Uint256};
 use crate::{domain::error::TokenContractError, ports::contracts::TokenContract};
+use alloy::{
+    primitives::{Address, U256},
+    providers::Provider,
+    signers::local::PrivateKeySigner,
+};
 use ark_bn254::Fr as Fr254;
 use ark_ff::{BigInteger, BigInteger256};
 use ark_std::Zero;
-use configuration::addresses::get_addresses;
+use configuration::{addresses::get_addresses, settings::get_settings};
 use lib::{
     blockchain_client::BlockchainClientConnection, error::BlockchainClientConnectionError,
     initialisation::get_blockchain_client_connection,
 };
-use nightfall_bindings::artifacts::{IERC1155, IERC20, IERC3525, IERC721};
+use log::info;
+use nightfall_bindings::artifacts::{IERC20, IERC721, IERC1155, IERC3525};
+use std::sync::Arc;
+
+const APPROVAL_GAS_LIMIT: u64 = 200_000;
+
+async fn get_provider_and_signer()
+-> Result<(Arc<dyn Provider>, PrivateKeySigner), BlockchainClientConnectionError> {
+    let client_lock = get_blockchain_client_connection().await;
+    let (provider, signer) = {
+        let guard = client_lock.read().await;
+        (guard.get_client(), guard.get_signer())
+    };
+    Ok((provider, signer))
+}
+
+fn provider_error<E: std::fmt::Display>(e: E) -> BlockchainClientConnectionError {
+    BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+}
+
+fn log_transaction_details(
+    request_id: Option<&str>,
+    context: &str,
+    from: Address,
+    to: Address,
+    nonce: u64,
+    gas_limit: u64,
+    gas_price: impl std::fmt::Debug,
+    max_fee_per_gas: impl std::fmt::Debug,
+    max_priority_fee_per_gas: impl std::fmt::Debug,
+    value: impl std::fmt::Debug,
+) {
+    match request_id {
+        Some(id) => info!(
+            "{id} {context} tx -> from: {:?}, to: {:?}, value: {:?}, nonce: {:?}, gas_limit: {}, gas_price: {:?}, max_fee_per_gas: {:?}, max_priority_fee_per_gas: {:?}",
+            from, to, value, nonce, gas_limit, gas_price, max_fee_per_gas, max_priority_fee_per_gas
+        ),
+        None => info!(
+            "{context} tx -> from: {:?}, to: {:?}, value: {:?}, nonce: {:?}, gas_limit: {}, gas_price: {:?}, max_fee_per_gas: {:?}, max_priority_fee_per_gas: {:?}",
+            from, to, value, nonce, gas_limit, gas_price, max_fee_per_gas, max_priority_fee_per_gas
+        ),
+    }
+}
 
 impl TokenContract for IERC20::IERC20Calls {
     async fn set_approval(
@@ -29,30 +76,52 @@ impl TokenContract for IERC20::IERC20Calls {
         let solidity_approval_address = get_addresses().nightfall();
         let solidity_value = Uint256::from(value);
 
-        // Send the transaction.
-        let blockchain_client = get_blockchain_client_connection()
+        let (provider, signer) = get_provider_and_signer().await?;
+        let signer_address = signer.address();
+        let client = provider.root();
+        let nonce = client
+            .get_transaction_count(signer_address)
             .await
-            .read()
+            .map_err(|e| provider_error(e))?;
+        let gas_price = client
+            .get_gas_price()
             .await
-            .get_client();
-        let client = blockchain_client.root();
+            .map_err(|e| provider_error(e))?;
+        let max_fee_per_gas = gas_price * 2;
+        let max_priority_fee_per_gas = gas_price;
 
-        let tx_receipt = IERC20::new(solidity_erc_address.0, client.clone())
+        log_transaction_details(
+            None,
+            "ERC20 approval",
+            signer_address,
+            solidity_erc_address.0,
+            nonce,
+            APPROVAL_GAS_LIMIT,
+            gas_price.clone(),
+            max_fee_per_gas.clone(),
+            max_priority_fee_per_gas.clone(),
+            U256::ZERO,
+        );
+
+        let call = IERC20::new(solidity_erc_address.0, client.clone())
             .approve(solidity_approval_address, solidity_value.0)
-            .send()
+            .nonce(nonce)
+            .gas(APPROVAL_GAS_LIMIT)
+            .max_fee_per_gas(max_fee_per_gas)
+            .max_priority_fee_per_gas(max_priority_fee_per_gas)
+            .chain_id(get_settings().network.chain_id)
+            .build_raw_transaction(signer)
             .await
-            .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-            })?
-            .get_receipt()
-            .await;
+            .map_err(|e| provider_error(e))?;
 
-        if tx_receipt.is_err() {
-            return Err(BlockchainClientConnectionError::ProviderError(
-                "Failed to get transaction receipt".to_string(),
-            )
-            .into());
-        }
+        client
+            .send_raw_transaction(&call)
+            .await
+            .map_err(|e| provider_error(e))?
+            .get_receipt()
+            .await
+            .map_err(|e| provider_error(format!("Failed to get transaction receipt: {e}")))?;
+
         Ok(())
     }
 }
@@ -74,30 +143,52 @@ impl TokenContract for IERC721::IERC721Calls {
         let solidity_approval_address = get_addresses().nightfall();
         let solidity_token_id = Uint256::from(token_id);
 
-        // Send the transaction.
-        let blockchain_client = get_blockchain_client_connection()
+        let (provider, signer) = get_provider_and_signer().await?;
+        let signer_address = signer.address();
+        let client = provider.root();
+        let nonce = client
+            .get_transaction_count(signer_address)
             .await
-            .read()
+            .map_err(|e| provider_error(e))?;
+        let gas_price = client
+            .get_gas_price()
             .await
-            .get_client();
-        let client = blockchain_client.root();
+            .map_err(|e| provider_error(e))?;
+        let max_fee_per_gas = gas_price * 2;
+        let max_priority_fee_per_gas = gas_price;
 
-        let tx_receipt = IERC721::new(solidity_erc_address.0, client.clone())
+        log_transaction_details(
+            None,
+            "ERC721 approval",
+            signer_address,
+            solidity_erc_address.0,
+            nonce,
+            APPROVAL_GAS_LIMIT,
+            gas_price.clone(),
+            max_fee_per_gas.clone(),
+            max_priority_fee_per_gas.clone(),
+            U256::ZERO,
+        );
+
+        let call = IERC721::new(solidity_erc_address.0, client.clone())
             .approve(solidity_approval_address, solidity_token_id.0)
-            .send()
+            .nonce(nonce)
+            .gas(APPROVAL_GAS_LIMIT)
+            .max_fee_per_gas(max_fee_per_gas)
+            .max_priority_fee_per_gas(max_priority_fee_per_gas)
+            .chain_id(get_settings().network.chain_id)
+            .build_raw_transaction(signer)
             .await
-            .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-            })?
-            .get_receipt()
-            .await;
+            .map_err(|e| provider_error(e))?;
 
-        if tx_receipt.is_err() {
-            return Err(BlockchainClientConnectionError::ProviderError(
-                "Failed to get transaction receipt".to_string(),
-            )
-            .into());
-        }
+        client
+            .send_raw_transaction(&call)
+            .await
+            .map_err(|e| provider_error(e))?
+            .get_receipt()
+            .await
+            .map_err(|e| provider_error(format!("Failed to get transaction receipt: {e}")))?;
+
         Ok(())
     }
 }
@@ -118,30 +209,52 @@ impl TokenContract for IERC1155::IERC1155Calls {
         let solidity_erc_address = Addr::try_from(erc_address)?;
         let solidity_approval_address = get_addresses().nightfall();
 
-        // Send the transaction.
-        let blockchain_client = get_blockchain_client_connection()
+        let (provider, signer) = get_provider_and_signer().await?;
+        let signer_address = signer.address();
+        let client = provider.root();
+        let nonce = client
+            .get_transaction_count(signer_address)
             .await
-            .read()
+            .map_err(|e| provider_error(e))?;
+        let gas_price = client
+            .get_gas_price()
             .await
-            .get_client();
-        let client = blockchain_client.root();
+            .map_err(|e| provider_error(e))?;
+        let max_fee_per_gas = gas_price * 2;
+        let max_priority_fee_per_gas = gas_price;
 
-        let tx_receipt = IERC1155::new(solidity_erc_address.0, client.clone())
+        log_transaction_details(
+            None,
+            "ERC1155 approval",
+            signer_address,
+            solidity_erc_address.0,
+            nonce,
+            APPROVAL_GAS_LIMIT,
+            gas_price.clone(),
+            max_fee_per_gas.clone(),
+            max_priority_fee_per_gas.clone(),
+            U256::ZERO,
+        );
+
+        let call = IERC1155::new(solidity_erc_address.0, client.clone())
             .setApprovalForAll(solidity_approval_address, true)
-            .send()
+            .nonce(nonce)
+            .gas(APPROVAL_GAS_LIMIT)
+            .max_fee_per_gas(max_fee_per_gas)
+            .max_priority_fee_per_gas(max_priority_fee_per_gas)
+            .chain_id(get_settings().network.chain_id)
+            .build_raw_transaction(signer)
             .await
-            .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-            })?
-            .get_receipt()
-            .await;
+            .map_err(|e| provider_error(e))?;
 
-        if tx_receipt.is_err() {
-            return Err(BlockchainClientConnectionError::ProviderError(
-                "Failed to get transaction receipt".to_string(),
-            )
-            .into());
-        }
+        client
+            .send_raw_transaction(&call)
+            .await
+            .map_err(|e| provider_error(e))?
+            .get_receipt()
+            .await
+            .map_err(|e| provider_error(format!("Failed to get transaction receipt: {e}")))?;
+
         Ok(())
     }
 }
@@ -157,30 +270,52 @@ impl TokenContract for IERC3525::IERC3525Calls {
         let solidity_approval_address = get_addresses().nightfall();
         let solidity_token_id = Uint256::from(token_id);
 
-        // Send the transaction.
-        let blockchain_client = get_blockchain_client_connection()
+        let (provider, signer) = get_provider_and_signer().await?;
+        let signer_address = signer.address();
+        let client = provider.root();
+        let nonce = client
+            .get_transaction_count(signer_address)
             .await
-            .read()
+            .map_err(|e| provider_error(e))?;
+        let gas_price = client
+            .get_gas_price()
             .await
-            .get_client();
-        let client = blockchain_client.root();
+            .map_err(|e| provider_error(e))?;
+        let max_fee_per_gas = gas_price * 2;
+        let max_priority_fee_per_gas = gas_price;
 
-        let tx_receipt = IERC3525::new(solidity_erc_address.0, client.clone())
+        log_transaction_details(
+            None,
+            "ERC3525 approval",
+            signer_address,
+            solidity_erc_address.0,
+            nonce,
+            APPROVAL_GAS_LIMIT,
+            gas_price.clone(),
+            max_fee_per_gas.clone(),
+            max_priority_fee_per_gas.clone(),
+            U256::ZERO,
+        );
+
+        let call = IERC3525::new(solidity_erc_address.0, client.clone())
             .approve_0(solidity_approval_address, solidity_token_id.0)
-            .send()
+            .nonce(nonce)
+            .gas(APPROVAL_GAS_LIMIT)
+            .max_fee_per_gas(max_fee_per_gas)
+            .max_priority_fee_per_gas(max_priority_fee_per_gas)
+            .chain_id(get_settings().network.chain_id)
+            .build_raw_transaction(signer)
             .await
-            .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-            })?
-            .get_receipt()
-            .await;
+            .map_err(|e| provider_error(e))?;
 
-        if tx_receipt.is_err() {
-            return Err(BlockchainClientConnectionError::ProviderError(
-                "Failed to get transaction receipt".to_string(),
-            )
-            .into());
-        }
+        client
+            .send_raw_transaction(&call)
+            .await
+            .map_err(|e| provider_error(e))?
+            .get_receipt()
+            .await
+            .map_err(|e| provider_error(format!("Failed to get transaction receipt: {e}")))?;
+
         Ok(())
     }
 }

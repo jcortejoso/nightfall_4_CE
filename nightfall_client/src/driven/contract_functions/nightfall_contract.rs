@@ -8,7 +8,7 @@ use crate::{
     drivers::rest::utils::to_nf_token_id_from_solidity,
     ports::{contracts::NightfallContract, secret_hash::SecretHash},
 };
-use alloy::primitives::{keccak256, Address, B256, I256};
+use alloy::primitives::{Address, B256, I256, keccak256};
 use alloy::rpc::types::Filter;
 use alloy::{
     consensus::Transaction,
@@ -19,12 +19,15 @@ use alloy::{
 use ark_bn254::Fr as Fr254;
 use ark_ff::BigInteger256;
 use ark_std::Zero;
-use configuration::{addresses::get_addresses, settings::{get_settings, Settings}};
+use configuration::{
+    addresses::get_addresses,
+    settings::{Settings, get_settings},
+};
 use lib::{
     blockchain_client::BlockchainClientConnection, initialisation::get_blockchain_client_connection,
 };
 use log::{debug, info};
-use nightfall_bindings::artifacts::{ERC20Mock, Nightfall, IERC3525};
+use nightfall_bindings::artifacts::{ERC20Mock, IERC3525, Nightfall};
 use num::BigUint;
 
 impl NightfallContract for Nightfall::NightfallCalls {
@@ -68,15 +71,30 @@ impl NightfallContract for Nightfall::NightfallCalls {
         } else {
             fee + fee + deposit_fee
         };
-        let nonce = client.get_transaction_count(signer.address()).await.map_err(|e| {
-            NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
-        })?;
+        let nonce = client
+            .get_transaction_count(signer.address())
+            .await
+            .map_err(|e| {
+                NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
+            })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
             NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
         })?;
         let max_fee_per_gas = gas_price * 2;
         let max_priority_fee_per_gas = gas_price;
-        let gas_limit = 500000000u64;
+        let gas_limit = 2000000u64;
+        log_transaction_details(
+            "Nightfall escrow",
+            signer.address(),
+            solidity_erc_address,
+            nonce,
+            gas_limit,
+            gas_price.clone(),
+            max_fee_per_gas.clone(),
+            max_priority_fee_per_gas.clone(),
+            Uint256::from(total_fee).0,
+        );
+
         let call = contract
             .escrow_funds(
                 solidity_fee.0,
@@ -92,12 +110,14 @@ impl NightfallContract for Nightfall::NightfallCalls {
             .max_fee_per_gas(max_fee_per_gas)
             .max_priority_fee_per_gas(max_priority_fee_per_gas)
             .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-            .build_raw_transaction(signer).await
+            .build_raw_transaction(signer)
+            .await
             .map_err(|e| {
                 NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
             })?;
 
-        let receipt = client.send_raw_transaction(&call)
+        let receipt = client
+            .send_raw_transaction(&call)
             .await
             .map_err(|e| {
                 NightfallContractError::EscrowError(format!("Error getting receipt: {e}"))
@@ -170,9 +190,12 @@ impl NightfallContract for Nightfall::NightfallCalls {
 
         let contract = Nightfall::new(get_addresses().nightfall(), client.clone());
 
-        let nonce = client.get_transaction_count(signer.address()).await.map_err(|e| {
-            NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
-        })?;
+        let nonce = client
+            .get_transaction_count(signer.address())
+            .await
+            .map_err(|e| {
+                NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
+            })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
             NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
         })?;
@@ -186,12 +209,14 @@ impl NightfallContract for Nightfall::NightfallCalls {
             .max_fee_per_gas(max_fee_per_gas)
             .max_priority_fee_per_gas(max_priority_fee_per_gas)
             .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-            .build_raw_transaction(signer).await
+            .build_raw_transaction(signer)
+            .await
             .map_err(|e| {
                 NightfallContractError::EscrowError(format!("Transaction unsuccesful: {e}"))
             })?;
 
-        let receipt = client.send_raw_transaction(&call)
+        let receipt = client
+            .send_raw_transaction(&call)
             .await
             .map_err(|e| {
                 NightfallContractError::EscrowError(format!("Error getting receipt: {e}"))
@@ -358,4 +383,21 @@ impl NightfallContract for Nightfall::NightfallCalls {
             )),
         }
     }
+}
+
+fn log_transaction_details(
+    context: &str,
+    from: Address,
+    to: Address,
+    nonce: u64,
+    gas_limit: u64,
+    gas_price: impl std::fmt::Debug,
+    max_fee_per_gas: impl std::fmt::Debug,
+    max_priority_fee_per_gas: impl std::fmt::Debug,
+    value: impl std::fmt::Debug,
+) {
+    info!(
+        "{context} tx -> from: {:?}, to: {:?}, value: {:?}, nonce: {:?}, gas_limit: {}, gas_price: {:?}, max_fee_per_gas: {:?}, max_priority_fee_per_gas: {:?}",
+        from, to, value, nonce, gas_limit, gas_price, max_fee_per_gas, max_priority_fee_per_gas
+    );
 }
