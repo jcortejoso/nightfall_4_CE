@@ -31,8 +31,8 @@ url = "http://proposer:3000"
 log_level = "info"
 wallet_type = "local"
 db_url = "mongodb://nf4_db_proposer:27017"
-block_assembly_max_wait_secs = 120 
-block_assembly_target_fill_ratio = 0.25 
+block_assembly_max_wait_secs = 120
+block_assembly_target_fill_ratio = 0.25
 block_assembly_initial_interval_secs = 15
 max_event_listener_attempts = 10
 block_size = 64
@@ -161,8 +161,8 @@ url = "http://proposer:3000"
 log_level = "info"
 wallet_type = "local"
 db_url = "mongodb://nf4_db_proposer:27017"
-block_assembly_max_wait_secs = 120 
-block_assembly_target_fill_ratio = 0.25 
+block_assembly_max_wait_secs = 120
+block_assembly_target_fill_ratio = 0.25
 block_assembly_initial_interval_secs = 15
 max_event_listener_attempts = 10
 block_size = 64
@@ -216,10 +216,10 @@ mock_prover = false
 genesis_block = 0
 ethereum_client_url = "wss://testnet-rpc.plume.org"
 configuration_url = "http://35.225.105.10:8080" # The name of the proposer config to use can be overridden by env var NF4_PROPOSER_CONFIG
- 
+
 [plume_testnet.network]
 chain_id = 98867
- 
+
 [plume_testnet.nightfall_client]
 url = "http://client:3000"
 log_level = "info"
@@ -234,8 +234,8 @@ url = "http://35.225.105.10:3001"
 log_level = "info"
 wallet_type = "local"
 db_url = "mongodb://nf4_db_proposer:27017"
-block_assembly_max_wait_secs = 120 
-block_assembly_target_fill_ratio = 0.25 
+block_assembly_max_wait_secs = 120
+block_assembly_target_fill_ratio = 0.25
 block_assembly_initial_interval_secs = 15
 max_event_listener_attempts = 10
 block_size = 64
@@ -249,14 +249,14 @@ proposer_ding = 3                                                       # how mu
 proposer_exit_penalty = 2                                               # how much to fine a proposer for deregister during its turn
 proposer_cooling_blocks = 4                                             # how many blocks before a de-registered proposer can register again
 proposer_rotation_blocks = 4                                            # how many blocks before we rotate proposers
- 
+
 [plume_testnet.nightfall_test]
 log_level = "info"
 
 [plume_testnet.owners]
-vk_provider_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"  
-x509_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"  
-verifier_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"  
+vk_provider_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"
+x509_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"
+verifier_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"
 round_robin_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"
 nightfall_owner = "0x32fE75423eFaC83B636E41115152A0Fe6D14C7c2"
 
@@ -290,8 +290,8 @@ log_app_only = true
 test_x509_certificates = true
 mock_prover = false
 genesis_block = 0
-ethereum_client_url = "override this with an environment variable NF4_ETHEREUM_CLIENT_URL"
-configuration_url = "https://nightfall.celo-sepolia.celo-testnet.org"
+ethereum_client_url = "https://forno.celo-sepolia.celo-testnet.org"
+configuration_url = ""
 
 [celo_sepolia.network]
 chain_id = 11142220 # Celo Sepolia chain id
@@ -306,7 +306,7 @@ webhook_url = "http://172.18.0.250:8080/webhook"
 max_queue_size = 1000
 
 [celo_sepolia.nightfall_proposer]
-url = "http://proposer:3000"
+url = "https://nightfall.celo-sepolia.celo-testnet.org"
 log_level = "info"
 wallet_type = "local"
 db_url = "mongodb://nf4_db_proposer:27017"
@@ -318,8 +318,8 @@ block_size = 64
 
 [celo_sepolia.nightfall_deployer]
 log_level = "info"
-default_proposer_address = "0xB4482738243946ffAb384Fa5409bcad8F304a757"
-default_proposer_url = "http://proposer:3000"
+default_proposer_address = "0xd1Fe296737888f2310EDD943bc6342a41d8Da409"
+default_proposer_url = "https://nightfall.celo-sepolia.celo-testnet.org"
 proposer_stake = 4
 proposer_ding = 3
 proposer_exit_penalty = 2
@@ -343,9 +343,9 @@ deployment_file = "./blockchain_assets/logs/deployer.s.sol"
 deploy_contracts = false
 
 [celo_sepolia.contracts.contract_addresses]
-nightfall = ""
-round_robin = ""
-x509 = ""
+nightfall = "0x90d4f6bab543c08443129e432b70bac42a514af2"
+round_robin = "0x3ae319b993a6505ce832d542507a50f40e2aaec5"
+x509 = "0xe3670fd4cc0be9b855e5b2a9109209180271f9a9"
 
 [celo_sepolia.certificates]
 authority_key_identifier = "0xA469FF28BFAB9C4DB09220B24038D6F18EA57F75"
