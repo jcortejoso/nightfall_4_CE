@@ -221,6 +221,14 @@ pub async fn get_synchronisation_status<N: NightfallContract>(
 
     match db.get_block_by_number(expected_u64).await {
         Some(stored_block) => {
+            // If current_block_number is 0 or negative, no blocks exist on chain yet
+            if current_block_number <= I256::ZERO {
+                warn!("No Layer 2 blocks exist on chain yet (current block: {}), but local DB has block {}", current_block_number, expected_u64);
+                return Ok(SynchronisationStatus::new(
+                    SynchronisationPhase::Desynchronized,
+                ));
+            }
+            
             let stored_hash = stored_block.hash();
             let (proposer_address, block_onchain) =
                 N::get_layer2_block_by_number(current_block_number)
