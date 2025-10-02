@@ -291,7 +291,7 @@ test_x509_certificates = true
 mock_prover = false
 genesis_block = 0
 ethereum_client_url = "https://forno.celo-sepolia.celo-testnet.org"
-configuration_url = ""
+configuration_url = "https://forno.celo-sepolia.celo-testnet.org"
 
 [celo_sepolia.network]
 chain_id = 11142220 # Celo Sepolia chain id
