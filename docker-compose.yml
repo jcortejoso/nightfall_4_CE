@@ -69,18 +69,23 @@ services:
       start_period: 0s
     networks:
       - nightfall_network
+    # volumes:
+    #   - type: bind
+    #     source: ./configuration
+    #     target: /app/configuration
+    #     read_only: true
     depends_on:
       db_client:
         condition: service_healthy
     tty: true # required for logs to print in colour
     environment:
-      - NF4_RUN_MODE=${NF4_RUN_MODE:-plume_testnet}
+      - NF4_RUN_MODE=${NF4_RUN_MODE:-celo_sepolia}
       - RUST_BACKTRACE=${RUST_BACKTRACE:-0}
       - NF4_SIGNING_KEY=${CLIENT_SIGNING_KEY}
       - NF4_NIGHTFALL_CLIENT__DB_URL=mongodb://nf4_db_client:27017
       - NF4_ETHEREUM_CLIENT_URL
       - NF4_MOCK_PROVER=${NF4_MOCK_PROVER:-false}
-      - NF4_NIGHTFALL_PROPOSER__URL= ${NF4_NIGHTFALL_PROPOSER__URL:-http://35.225.105.10:3001}
+      - NF4_NIGHTFALL_PROPOSER__URL=${NF4_NIGHTFALL_PROPOSER__URL:-https://nightfall.celo-sepolia.celo-testnet.org}
 
   client2:
     container_name: nf4_client2
