@@ -21,6 +21,12 @@ COPY --from=builder /app/bin/client bin/
 # COPY configuration/toml/addresses.toml configuration/toml/
 COPY .env *.env nightfall.toml .
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libssl3 wget
+    libssl3 \
+    ca-certificates \
+    wget && \
+    update-ca-certificates
+# carry over any additional trusted certificates from the builder stage
+COPY --from=builder /usr/local/share/ca-certificates /usr/local/share/ca-certificates
+COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 EXPOSE 3000
 CMD ["/app/bin/client"]
