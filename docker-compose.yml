@@ -69,11 +69,11 @@ services:
       start_period: 0s
     networks:
       - nightfall_network
-    # volumes:
-    #   - type: bind
-    #     source: ./configuration
-    #     target: /app/configuration
-    #     read_only: true
+    volumes:
+      - type: bind
+        source: ./configuration
+        target: /app/configuration
+        read_only: true
     depends_on:
       db_client:
         condition: service_healthy
@@ -444,13 +444,22 @@ services:
       context: .
     restart: unless-stopped
     ports:
-      - "8080:80" 
+      - "80:80"
+      - "443:443"
     platform: linux/amd64 # Required for building on M1 Macs
     volumes:
       - type: bind
         source: ./configuration/toml
         target: /var/www/html/configuration/toml
         read_only: false
+      - type: bind
+        source: ./certbot/conf
+        target: /etc/letsencrypt
+        read_only: true
+      - type: bind
+        source: ./certbot/www
+        target: /var/www/certbot
+        read_only: true
     networks:
       - nightfall_network
     stdin_open: true # keep stdin open, so we can print things in docker compose up
@@ -459,6 +468,27 @@ services:
       - NF4_RUN_MODE=${NF4_RUN_MODE:-development}
       - RUST_BACKTRACE=${RUST_BACKTRACE:-0}
       - NGINX_ENTRYPOINT_QUIET_LOGS=1
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: nf4_certbot
+    stop_grace_period: 3s
+    profiles:
+      - configuration
+      - development
+      - sync_test
+      - no_test
+    volumes:
+      - type: bind
+        source: ./certbot/conf
+        target: /etc/letsencrypt
+      - type: bind
+        source: ./certbot/www
+        target: /var/www/certbot
+    entrypoint: /bin/sh
+    command: -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+    networks:
+      - nightfall_network
 
   anvil:
     container_name: anvil
