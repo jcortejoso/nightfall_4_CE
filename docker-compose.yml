@@ -165,6 +165,10 @@ services:
         source: address_data
         target: /app/configuration/toml
         read_only: true
+      - type: bind
+        source: ./configuration/bin
+        target: /app/configuration/bin
+        read_only: true
     depends_on:
       db_proposer:
         condition: service_healthy
@@ -205,6 +209,11 @@ services:
       start_period: 0s
     networks:
       - nightfall_network
+    volumes:
+      - type: bind
+        source: ./configuration/bin
+        target: /app/configuration/bin
+        read_only: true
     depends_on:
       db_proposer:
         condition: service_healthy
@@ -448,6 +457,10 @@ services:
       - "443:443"
     platform: linux/amd64 # Required for building on M1 Macs
     volumes:
+      - type: bind
+        source: ./configuration/bin
+        target: /var/www/html/bin
+        read_only: true
       - type: bind
         source: ./configuration/toml
         target: /var/www/html/configuration/toml
