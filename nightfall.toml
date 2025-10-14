@@ -302,7 +302,7 @@ log_level = "info"
 wallet_type = "local"
 db_url = "mongodb://nf4_db_client:27017"
 max_event_listener_attempts = 10
-webhook_url = "http://172.18.0.250:8080/webhook"
+webhook_url = "http://host.docker.internal:8081/webhook"
 max_queue_size = 1000
 
 [celo_sepolia.nightfall_proposer]
