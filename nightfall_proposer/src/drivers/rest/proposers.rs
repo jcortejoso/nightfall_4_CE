@@ -67,10 +67,13 @@ async fn handle_add_proposer(url: String) -> Result<impl Reply, warp::Rejection>
     let client = blockchain_client.root();
     let proposer_manager = RoundRobin::new(get_addresses().round_robin, client.clone());
 
-    let nonce = blockchain_client.get_transaction_count(caller).await.map_err(|e| {
-        warn!("{e}");
-        ProposerRejection::FailedToAddProposer
-    })?;
+    let nonce = blockchain_client
+        .get_transaction_count(caller)
+        .await
+        .map_err(|e| {
+            warn!("{e}");
+            ProposerRejection::FailedToAddProposer
+        })?;
     let gas_price = blockchain_client.get_gas_price().await.map_err(|e| {
         warn!("{e}");
         ProposerRejection::FailedToAddProposer
@@ -79,7 +82,6 @@ async fn handle_add_proposer(url: String) -> Result<impl Reply, warp::Rejection>
     let max_priority_fee_per_gas = gas_price;
     let gas_limit = 5000000u64;
 
-    
     let raw_tx = proposer_manager
         .add_proposer(url)
         .value(U256::from(get_settings().nightfall_deployer.proposer_stake))
@@ -88,7 +90,8 @@ async fn handle_add_proposer(url: String) -> Result<impl Reply, warp::Rejection>
         .max_fee_per_gas(max_fee_per_gas)
         .max_priority_fee_per_gas(max_priority_fee_per_gas)
         .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-        .build_raw_transaction(signer).await
+        .build_raw_transaction(signer)
+        .await
         .map_err(|e| {
             warn!("{e}");
             ProposerRejection::FailedToAddProposer
@@ -154,10 +157,13 @@ async fn handle_remove_proposer() -> Result<impl Reply, warp::Rejection> {
         }
     }
 
-    let nonce = blockchain_client.get_transaction_count(signer_address).await.map_err(|e| {
-        warn!("{e}");
-        ProposerRejection::FailedToRemoveProposer
-    })?;
+    let nonce = blockchain_client
+        .get_transaction_count(signer_address)
+        .await
+        .map_err(|e| {
+            warn!("{e}");
+            ProposerRejection::FailedToRemoveProposer
+        })?;
     let gas_price = blockchain_client.get_gas_price().await.map_err(|e| {
         warn!("{e}");
         ProposerRejection::FailedToRemoveProposer
@@ -166,7 +172,6 @@ async fn handle_remove_proposer() -> Result<impl Reply, warp::Rejection> {
     let max_priority_fee_per_gas = gas_price;
     let gas_limit = 5000000u64;
 
-    
     let raw_tx = proposer_manager
         .remove_proposer()
         .nonce(nonce)
@@ -174,7 +179,8 @@ async fn handle_remove_proposer() -> Result<impl Reply, warp::Rejection> {
         .max_fee_per_gas(max_fee_per_gas)
         .max_priority_fee_per_gas(max_priority_fee_per_gas)
         .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-        .build_raw_transaction(signer).await
+        .build_raw_transaction(signer)
+        .await
         .map_err(|e| {
             warn!("{e}");
             ProposerRejection::FailedToRemoveProposer
@@ -219,11 +225,14 @@ async fn handle_withdraw(amount: u64) -> Result<impl Reply, warp::Rejection> {
     let signer = read_connection.get_signer();
     let proposer_manager = RoundRobin::new(get_addresses().round_robin, blockchain_client.root());
     // attemp to withdraw the stake
-    let nonce = blockchain_client.get_transaction_count(caller).await  .map_err(|e| {
-        warn!("{e}");
-        ProposerRejection::FailedToWithdrawStake
-    })?;
-    let gas_price = blockchain_client.get_gas_price().await  .map_err(|e| {
+    let nonce = blockchain_client
+        .get_transaction_count(caller)
+        .await
+        .map_err(|e| {
+            warn!("{e}");
+            ProposerRejection::FailedToWithdrawStake
+        })?;
+    let gas_price = blockchain_client.get_gas_price().await.map_err(|e| {
         warn!("{e}");
         ProposerRejection::FailedToWithdrawStake
     })?;
@@ -231,7 +240,6 @@ async fn handle_withdraw(amount: u64) -> Result<impl Reply, warp::Rejection> {
     let max_priority_fee_per_gas = gas_price;
     let gas_limit = 5000000u64;
 
-    
     let raw_tx = proposer_manager
         .withdraw(U256::from(amount))
         .nonce(nonce)
@@ -239,7 +247,8 @@ async fn handle_withdraw(amount: u64) -> Result<impl Reply, warp::Rejection> {
         .max_fee_per_gas(max_fee_per_gas)
         .max_priority_fee_per_gas(max_priority_fee_per_gas)
         .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-        .build_raw_transaction(signer).await
+        .build_raw_transaction(signer)
+        .await
         .map_err(|e| {
             warn!("{e}");
             ProposerRejection::FailedToWithdrawStake

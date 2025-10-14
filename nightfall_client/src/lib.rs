@@ -24,7 +24,6 @@ use std::{
 use bip32::{Mnemonic};
 use bip32::DerivationPath;
 
-
 /// This function is used to retrieve the zkp keys
 pub fn get_zkp_keys() -> &'static Mutex<ZKPKeys> {
     static ZKP_KEYS: OnceLock<Mutex<ZKPKeys>> = OnceLock::new();

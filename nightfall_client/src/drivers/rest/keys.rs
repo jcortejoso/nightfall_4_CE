@@ -1,10 +1,11 @@
-use bip32::{DerivationPath, Mnemonic};
+use bip32::DerivationPath;
 use warp::{hyper::StatusCode, path, reject, reply, Filter, Reply, Rejection};
 
 use crate::{
     drivers::derive_key::ZKPKeys,
     get_zkp_keys,
 };
+use bip32::Mnemonic;
 
 use super::models::KeyRequest;
 
@@ -36,7 +37,7 @@ pub async fn handle_derive_key(key_request: Option<KeyRequest>) -> Result<impl R
         if let Ok(key) = ZKPKeys::derive_from_mnemonic(&valid_mnemonic, &valid_derivation_path) {
             // update the static
             let mut zkpk = get_zkp_keys().lock().expect("Poisoned lock");
-            *zkpk = key.clone(); // store derived key
+            *zkpk = key; // store derived key
             Ok(reply::with_status(reply::json(&key), StatusCode::OK))
         } else {
             Err(reject::not_found())

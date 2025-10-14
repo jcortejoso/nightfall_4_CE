@@ -45,10 +45,14 @@ impl TokenContract for IERC20::IERC20Calls {
             .get_signer();
 
         let nonce = client.get_transaction_count(caller).await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting nonce in ERC20::set_approval: {e}"
+            ))
         })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting gas price in ERC20::set_approval: {e}"
+            ))
         })?;
         let max_fee_per_gas = gas_price * 2;
         let max_priority_fee_per_gas = gas_price;
@@ -64,17 +68,26 @@ impl TokenContract for IERC20::IERC20Calls {
             .build_raw_transaction(signer)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when building raw transaction in ERC20::set_approval: {e}"
+                ))
             })?;
 
         let tx_receipt = client
             .send_raw_transaction(&raw_tx)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when sending raw transaction in ERC20::set_approval: {e}"
+                ))
             })?
             .get_receipt()
-            .await;
+            .await
+            .map_err(|e| {
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when getting receipt in ERC20::set_approval: {e}"
+                ))
+            })?;
 
         // Send the transaction with explicit `from`
         // ERC-20 approve(spender, amount) never requires token ownership or balance. It just sets the allowance for the caller itself (owner = msg.sender)
@@ -140,28 +153,15 @@ impl TokenContract for IERC721::IERC721Calls {
             .await
             .get_signer();
 
-        // // Send the transaction with explicit `from`
-        // let tx_receipt = IERC721::new(solidity_erc_address.0, client.clone())
-        //     .approve(spender, token_id_u256.0)
-        //     .from(caller)
-        //     .send()
-        //     .await
-        //     .map_err(|e| {
-        //         BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-        //     })?
-        //     .get_receipt()
-        //     .await
-        //     .map_err(|_| {
-        //         BlockchainClientConnectionError::ProviderError(
-        //             "Failed to get transaction receipt".to_string(),
-        //         )
-        //     })?;
-
         let nonce = client.get_transaction_count(caller).await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting nonce in ERC721::set_approval: {e}"
+            ))
         })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting gas price in ERC721::set_approval: {e}"
+            ))
         })?;
         let max_fee_per_gas = gas_price * 2;
         let max_priority_fee_per_gas = gas_price;
@@ -183,10 +183,17 @@ impl TokenContract for IERC721::IERC721Calls {
             .send_raw_transaction(&raw_tx)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when sending raw transaction in ERC721::set_approval: {e}"
+                ))
             })?
             .get_receipt()
-            .await;
+            .await
+            .map_err(|e| {
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when getting receipt in ERC721::set_approval: {e}"
+                ))
+            })?;
 
         debug!(
             "ERC721 approval tx mined, from: {:?}",
@@ -235,10 +242,14 @@ impl TokenContract for IERC1155::IERC1155Calls {
         let erc1155 = IERC1155::new(solidity_erc_address.0, client.clone());
 
         let nonce = client.get_transaction_count(caller).await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting nonce in ERC1155::set_approval: {e}"
+            ))
         })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting gas price in ERC1155::set_approval: {e}"
+            ))
         })?;
         let max_fee_per_gas = gas_price * 2;
         let max_priority_fee_per_gas = gas_price;
@@ -253,17 +264,26 @@ impl TokenContract for IERC1155::IERC1155Calls {
             .build_raw_transaction(signer)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when building raw transaction in ERC1155::set_approval: {e}"
+                ))
             })?;
 
         let tx_receipt = client
             .send_raw_transaction(&raw_tx)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when sending raw transaction in ERC1155::set_approval: {e}"
+                ))
             })?
             .get_receipt()
-            .await;
+            .await
+            .map_err(|e| {
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when getting receipt in ERC1155::set_approval: {e}"
+                ))
+            })?;
 
         // Send the transaction with explicit `from`
         // setApprovalForAll(operator, approved) is per-caller, not per tokenId or value.
@@ -324,65 +344,19 @@ impl TokenContract for IERC3525::IERC3525Calls {
             .get_signer();
 
         debug!("ERC3525 caller: {caller:?}");
-
-        // let nonce = client.get_transaction_count(caller).await.map_err(|e| {
-        //     BlockchainClientConnectionError::ProviderError(format!(
-        //         "Contract error: {e}"
-        //     ))
-        // })?;
-        // let gas_price = client.get_gas_price().await.map_err(|e| {
-        //     BlockchainClientConnectionError::ProviderError(format!(
-        //         "Contract error: {e}"
-        //     ))
-        // })?;
-        // let max_fee_per_gas = gas_price * 2;
-        // let max_priority_fee_per_gas = gas_price;
-        // let gas_limit = 500000000u64;
-        // let raw_tx = erc3525
-        //     .approve_0(spender, token_id_u256.0)
-        //     .nonce(nonce)
-        //     .gas(gas_limit)
-        //     .max_fee_per_gas(max_fee_per_gas)
-        //     .max_priority_fee_per_gas(max_priority_fee_per_gas)
-        //     .chain_id(get_settings().network.chain_id) // Linea testnet chain ID
-        //     .build_raw_transaction(caller).await
-        //     .map_err(|e| {
-        //         BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-        //     })?;
-
-        // let tx_receipt = client.send_raw_transaction(&raw_tx).await
-        //     .map_err(|e| {
-        //         BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-        //     })?
-        //     .get_receipt()
-        //     .await;
-
         // NOTE: IERC3525 has overloaded approve functions in many implementations.
         // Here we use the 2-arg overload approve(address to, uint256 tokenId),
         // which bindings expose as `approve_0`.
 
-        // // Send the transaction with explicit `from`
-        // let tx_receipt = IERC3525::new(solidity_erc_address.0, client.clone())
-        //     .approve_0(spender, token_id_u256.0)
-        //     .from(caller)
-        //     .send()
-        //     .await
-        //     .map_err(|e| {
-        //         BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
-        //     })?
-        //     .get_receipt()
-        //     .await
-        //     .map_err(|_| {
-        //         BlockchainClientConnectionError::ProviderError(
-        //             "Failed to get transaction receipt".to_string(),
-        //         )
-        //     })?;
-
         let nonce = client.get_transaction_count(caller).await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting nonce in ERC1155::set_approval: {e}"
+            ))
         })?;
         let gas_price = client.get_gas_price().await.map_err(|e| {
-            BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+            BlockchainClientConnectionError::ProviderError(format!(
+                "Contract error when getting gas price in ERC1155::set_approval: {e}"
+            ))
         })?;
         let max_fee_per_gas = gas_price * 2;
         let max_priority_fee_per_gas = gas_price;
@@ -397,17 +371,26 @@ impl TokenContract for IERC3525::IERC3525Calls {
             .build_raw_transaction(signer)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when building raw transaction in ERC1155::set_approval: {e}"
+                ))
             })?;
 
         let tx_receipt = client
             .send_raw_transaction(&raw_tx)
             .await
             .map_err(|e| {
-                BlockchainClientConnectionError::ProviderError(format!("Contract error: {e}"))
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when sending raw transaction in ERC1155::set_approval: {e}"
+                ))
             })?
             .get_receipt()
-            .await;
+            .await
+            .map_err(|e| {
+                BlockchainClientConnectionError::ProviderError(format!(
+                    "Contract error when getting receipt in ERC1155::set_approval: {e}"
+                ))
+            })?;
 
         debug!(
             "ERC3525 approval tx mined, from: {:?}",
