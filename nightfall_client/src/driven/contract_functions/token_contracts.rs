@@ -108,12 +108,9 @@ impl TokenContract for IERC20::IERC20Calls {
         //         )
         //     })?;
 
-        debug!(
-            "ERC20 approval tx mined, from: {:?}",
-            tx_receipt.as_ref().unwrap().from
-        );
+        debug!("ERC20 approval tx mined, from: {:?}", tx_receipt.from);
 
-        if !tx_receipt.unwrap().status() {
+        if !tx_receipt.status() {
             return Err(BlockchainClientConnectionError::ProviderError(
                 "ERC20 SetApproval Transaction reverted (status=0)".to_string(),
             )
@@ -196,12 +193,9 @@ impl TokenContract for IERC721::IERC721Calls {
                 ))
             })?;
 
-        debug!(
-            "ERC721 approval tx mined, from: {:?}",
-            tx_receipt.as_ref().unwrap().from
-        );
+        debug!("ERC721 approval tx mined, from: {:?}", tx_receipt.from);
 
-        if !tx_receipt.unwrap().status() {
+        if !tx_receipt.status() {
             return Err(BlockchainClientConnectionError::ProviderError(
                 "ERC721 SetApproval Transaction reverted (status=0)".to_string(),
             )
@@ -305,12 +299,9 @@ impl TokenContract for IERC1155::IERC1155Calls {
         //         )
         //     })?;
 
-        debug!(
-            "ERC1155 approval tx mined, from: {:?}",
-            tx_receipt.as_ref().unwrap().from
-        );
+        debug!("ERC1155 approval tx mined, from: {:?}", tx_receipt.from);
 
-        if !tx_receipt.unwrap().status() {
+        if !tx_receipt.status() {
             return Err(BlockchainClientConnectionError::ProviderError(
                 "ERC1155 SetApproval Transaction reverted (status=0)".to_string(),
             )
@@ -393,12 +384,9 @@ impl TokenContract for IERC3525::IERC3525Calls {
                 ))
             })?;
 
-        debug!(
-            "ERC3525 approval tx mined, from: {:?}",
-            tx_receipt.as_ref().unwrap().from
-        );
+        debug!("ERC3525 approval tx mined, from: {:?}", tx_receipt.from);
 
-        if !tx_receipt.unwrap().status() {
+        if !tx_receipt.status() {
             return Err(BlockchainClientConnectionError::ProviderError(
                 "ERC3525 SetApproval Transaction reverted (status=0)".to_string(),
             )
