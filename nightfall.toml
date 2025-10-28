@@ -327,11 +327,11 @@ proposer_cooling_blocks = 4
 proposer_rotation_blocks = 4
 
 [celo_sepolia.owners]
-vk_provider_owner = "0x45E3d83154C7E3F667b7c0BdaBCCdFBA3C774b06"
-x509_owner = "0x45E3d83154C7E3F667b7c0BdaBCCdFBA3C774b06"
-verifier_owner = "0x45E3d83154C7E3F667b7c0BdaBCCdFBA3C774b06"
-round_robin_owner = "0x45E3d83154C7E3F667b7c0BdaBCCdFBA3C774b06"
-nightfall_owner = "0x45E3d83154C7E3F667b7c0BdaBCCdFBA3C774b06"
+vk_provider_owner = "0x278D3c80F157781A9F2e05e7c47af3A8fC575c13"
+x509_owner = "0x278D3c80F157781A9F2e05e7c47af3A8fC575c13"
+verifier_owner = "0x278D3c80F157781A9F2e05e7c47af3A8fC575c13"
+round_robin_owner = "0x278D3c80F157781A9F2e05e7c47af3A8fC575c13"
+nightfall_owner = "0x278D3c80F157781A9F2e05e7c47af3A8fC575c13"
 
 [celo_sepolia.nightfall_test]
 log_level = "info"
